@@ -1,8 +1,11 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
@@ -11,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
+
+import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 
 /**
  * <p>
@@ -38,5 +43,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         log.debug("发送短信验证码成功，验证码：{}", code);
         // 6. 返回结果
         return Result.ok();
+    }
+
+    @Override
+    public Result login(LoginFormDTO loginForm, HttpSession session) {
+        // 1. 校验手机号
+        String phone = loginForm.getPhone();
+        if(RegexUtils.isPhoneInvalid(phone)) {
+            // 2. 如果不符合，返回错误信息
+            return Result.fail("手机号格式错误!");
+        }
+        // 3. 校验验证码
+        String code = loginForm.getCode();
+        Object cacheCode = session.getAttribute("code");
+        if(cacheCode == null || !cacheCode.toString().equals(code)) {
+            // 4. 不一致，返回错误信息
+            return Result.fail("验证码错误!");
+        }
+        // 5. 一致，根据手机号查询用户 select * from tb_user where phone = ?
+        User user = query().eq("phone", phone).one();
+        // 6. 判断用户是否存在
+        if(user == null) {
+            // 7. 不存在，创建新用户并保存
+            user = createUserWithPhone(phone);
+        }
+        // 8. 保存用户信息到 session
+        session.setAttribute("user", BeanUtil.copyProperties(user, UserDTO.class));
+        // 9. 返回结果
+        return Result.ok();
+    }
+
+    private User createUserWithPhone(String phone) {
+        User user = new User();
+        user.setPhone(phone);
+        user.setNickName(USER_NICK_NAME_PREFIX + RandomUtil.randomString(10));
+        save(user);
+        return user;
     }
 }
