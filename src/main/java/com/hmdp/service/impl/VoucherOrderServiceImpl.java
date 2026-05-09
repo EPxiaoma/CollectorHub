@@ -13,12 +13,15 @@ import com.hmdp.utils.UserHolder;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 /**
  * <p>
@@ -43,80 +46,35 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedissonClient redissonClient;
 
-    @Transactional
-    @Override
-    public Result seckillVoucher(Long voucherId) {
-        // 1. 查询优惠卷
-        SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
-        // 2. 判断秒杀是否开始
-        if (voucher.getBeginTime().isAfter(LocalDateTime.now())) {
-            // 尚未开始
-            return Result.fail("秒杀尚未开始！");
-        }
-        // 3. 判断秒杀是否已经结束
-        if (voucher.getEndTime().isBefore(LocalDateTime.now())) {
-            // 尚未开始
-            return Result.fail("秒杀已经结束！");
-        }
-        // 4. 判断库存是否充足
-        if (voucher.getStock() < 1) {
-            // 库存不足
-            return Result.fail("库存不足！");
-        }
-
-        Long userId = UserHolder.getUser().getId();
-        // 创建锁对象
-        // SimpleRedisLock lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
-        RLock lock = redissonClient.getLock("lock:order:" + userId);
-        // 获取锁
-        boolean isLock = lock.tryLock();
-        // 判断是否获取锁成功
-        if (!isLock) {
-            // 获取锁失败，返回错误或重试
-            return Result.fail("不允许重复下单");
-        }
-        try {
-            // 获取代理对象（事务）
-            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
-            return proxy.createVoucherOrder(voucherId);
-        } finally {
-            lock.unlock();
-        }
+    private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
+    static {
+        SECKILL_SCRIPT = new DefaultRedisScript<>();
+        SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
+        SECKILL_SCRIPT.setResultType(Long.class);
     }
 
-    @Transactional
-    public Result createVoucherOrder(Long voucherId) {
-        // 5. 一人一单
+    @Override
+    public Result seckillVoucher(Long voucherId) {
+        // 获取用户
         Long userId = UserHolder.getUser().getId();
+        // 1. 执行 lua 脚本
+        Long result = stringRedisTemplate.execute(
+                SECKILL_SCRIPT,
+                Collections.emptyList(),
+                voucherId.toString(), userId.toString()
+        );
 
-        // 5.1. 查询订单
-        Integer count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
-        // 5.2. 判断是否存在
-        if (count > 0) {
-            // 用户已经购买过了
-            return Result.fail("用户已经购买过一次！");
+        // 2. 判断结果是否为 0
+        int r = result.intValue();
+        if (r != 0) {
+            // 2.1. 不为 0，代表没有购买资格
+            return Result.fail(r == 1 ? "库存不足" : "不能重复下单");
         }
-        // 6. 扣减库存
-        boolean success = seckillVoucherService.update()
-                .setSql("stock = stock - 1")
-                .eq("voucher_id", voucherId)
-                .gt("stock", 0)
-                .update();
-        if (!success) {
-            // 扣减失败
-            return Result.fail("库存不足！");
-        }
-        // 7. 创建订单
-        VoucherOrder voucherOrder = new VoucherOrder();
-        // 7.1. 订单 id
+        // 2.2. 为 0，有购买资格，把下单消息保存到消息队列
         long orderId = redisIdWorker.nextId("order");
-        voucherOrder.setId(orderId);
-        // 7.2. 用户 id
-        voucherOrder.setUserId(userId);
-        // 7.3. 代金卷 id
-        voucherOrder.setVoucherId(voucherId);
-        save(voucherOrder);
-        // 8. 返回订单 id
+        // TODO 保存消息队列
+
+        // 3. 返回订单 id
         return Result.ok(orderId);
     }
 }
