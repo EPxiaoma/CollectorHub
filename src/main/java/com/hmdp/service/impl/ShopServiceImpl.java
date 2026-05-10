@@ -44,7 +44,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     @Override
     public Result queryById(Long id) {
         // 1. 逻辑过期解决缓存击穿
-        Shop shop = queryWithLogicalExpire(id);
+        Shop shop = queryWithMutex(id);
         if (shop == null) {
             return Result.fail("店铺不存在！");
         }
