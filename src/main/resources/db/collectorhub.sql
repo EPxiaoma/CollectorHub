@@ -163,7 +163,7 @@ INSERT INTO `tb_collectible_type` VALUES (1, '设计师潮玩', '/types/designer
 INSERT INTO `tb_collectible_type` VALUES (2, '盲盒系列', '/types/blind-box.png', 2, '2026-03-01 10:00:00', '2026-03-01 10:00:00');
 INSERT INTO `tb_collectible` VALUES (1, '星际小熊限定款', 1, '/imgs/collectibles/star-bear.png', 'CollectorHub', '线上发售', 0, 0, 12900, 0, 0, 50, '2026-03-01 10:00-22:00', '2026-03-01 10:00:00', '2026-03-01 10:00:00');
 INSERT INTO `tb_user` VALUES (1, '18800000000', '', '潮玩玩家001', '/imgs/icons/default-icon.png', '2026-03-01 10:00:00', '2026-03-01 10:00:00');
-INSERT INTO `tb_review` VALUES (1, 1, 1, '星际小熊开箱测评', '/imgs/reviews/star-bear-review.png', '做工扎实，涂装细节清晰，适合放入限量系列收藏。', 0, 0, '2026-03-01 10:00:00', '2026-03-01 10:00:00');
+INSERT INTO `tb_review` VALUES (1, 1, 1, '星际小熊开箱测评', '/imgs/reviews/d764fce6-a5d8-435f-ad81-17e65520f4e7', '做工扎实，涂装细节清晰，适合放入限量系列收藏。', 0, 0, '2026-03-01 10:00:00', '2026-03-01 10:00:00');
 INSERT INTO `tb_release_item` VALUES (1, 1, '星际小熊首发抢购', '限量首发', '每位用户限购一件，库存售完即止。', 12900, 12900, 1, 1, '2026-03-01 10:00:00', '2026-03-01 10:00:00');
 INSERT INTO `tb_flash_sale_item` VALUES (1, 100, '2026-03-01 10:00:00', '2026-03-01 10:00:00', '2026-03-31 22:00:00', '2026-03-01 10:00:00');
 

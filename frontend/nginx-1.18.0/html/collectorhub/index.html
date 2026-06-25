@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CollectorHub | 潮玩发售与玩家社区</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23121418'/%3E%3Ctext x='10' y='42' font-size='24' font-family='Arial' font-weight='900' fill='%23b8f35f'%3ECH%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <a class="brand" href="#discover" aria-label="CollectorHub">
+        <span class="brand-mark">CH</span>
+        <span><strong>CollectorHub</strong><small>潮玩发售与玩家社区</small></span>
+      </a>
+      <div class="account">
+        <span id="userBadge" class="user-badge">未登录</span>
+        <button id="logoutBtn" class="text-btn" type="button" hidden>退出</button>
+      </div>
+    </header>
+    <main class="app-main">
+      <section class="view active" id="discover" data-view="discover" aria-labelledby="discoverTitle">
+        <div class="hero-card"><div class="hero-copy"><p class="eyebrow">Launch Radar</p><h1 id="discoverTitle">发现下一只值得排队的潮玩</h1><p>聚合单品、发售日历、玩家开箱和限量秒杀，手机上也能快速完成发现到抢购。</p></div></div>
+        <form id="searchForm" class="search-box"><input id="searchInput" type="search" placeholder="搜索单品、系列或品牌" autocomplete="off"><button type="submit">搜索</button></form>
+        <section class="section-block"><div class="section-head row"><div><p class="eyebrow">Types</p><h2>品类筛选</h2></div><button id="refreshBtn" class="ghost-btn" type="button">刷新</button></div><div id="typeList" class="type-list" aria-label="品类筛选"></div></section>
+        <section class="section-block"><div class="section-head"><p class="eyebrow">Collectibles</p><h2>潮玩单品</h2></div><div id="collectibleGrid" class="collectible-grid"></div></section>
+      </section>
+      <section class="view" id="drops" data-view="drops" aria-labelledby="dropsTitle">
+        <section class="feature-panel"><div><p class="eyebrow">Selected Drop</p><h1 id="featuredTitle">正在加载发售信息</h1></div><div class="metric-row"><span><strong id="featuredPrice">--</strong><small>参考价</small></span><span><strong id="featuredStock">--</strong><small>库存</small></span><span><strong id="featuredScore">--</strong><small>热度</small></span></div></section>
+        <article class="product-detail"><div id="selectedArtwork" class="product-art"></div><div><p class="eyebrow">Selected Toy</p><h2 id="selectedName">选择一个单品</h2><p id="selectedMeta" class="muted">查看价格、渠道、评分和关联发售。</p><div id="selectedStats" class="stat-line"></div></div></article>
+        <section class="section-block"><div class="section-head row"><div><p class="eyebrow">Calendar</p><h2 id="dropsTitle">发售日历与秒杀</h2></div><span id="releaseStatus" class="status-pill">待选择</span></div><div id="releaseList" class="release-list"></div></section>
+      </section>
+      <section class="view" id="community" data-view="community" aria-labelledby="communityTitle"><div class="section-head row sticky-section-head"><div><p class="eyebrow">Community</p><h1 id="communityTitle">玩家开箱测评</h1></div><button id="myReviewsBtn" class="ghost-btn" type="button">我的</button></div><div id="reviewFeed" class="review-feed"></div></section>
+      <section class="view" id="creator" data-view="creator" aria-labelledby="creatorTitle"><div class="section-head"><p class="eyebrow">Creator Studio</p><h1 id="creatorTitle">发布开箱测评</h1><p class="muted">选择单品后会自动带入 ID，补充标题、图片和正文即可发布。</p></div><form id="reviewForm" class="review-form"><label>关联单品 ID<input id="reviewCollectibleId" type="number" min="1" placeholder="选择单品后自动填入"></label><label>上传图片<input id="reviewImage" type="file" accept="image/*"></label><label>标题<input id="reviewTitle" type="text" maxlength="80" placeholder="例如：首发款实物质感记录"></label><label>内容<textarea id="reviewContent" rows="6" maxlength="800" placeholder="记录包装、涂装、关节、编号和收藏建议"></textarea></label><button type="submit" class="full-btn">发布测评</button></form><p id="reviewStatus" class="status-text"></p></section>
+      <section class="view" id="profile" data-view="profile" aria-labelledby="profileTitle"><div class="section-head"><p class="eyebrow">Account</p><h1 id="profileTitle">玩家身份</h1><p class="muted">登录后可参与秒杀、点赞测评及自己的开箱记录。</p></div><form id="loginForm" class="login-form"><label>手机号<input id="phoneInput" type="tel" placeholder="18800000000" maxlength="11" inputmode="numeric"></label><div class="code-row"><label>验证码<input id="codeInput" type="text" placeholder="6 位验证码" maxlength="6" inputmode="numeric"></label><button id="sendCodeBtn" type="button">发送</button></div><button type="submit" class="full-btn">登录 CollectorHub</button></form><p id="authStatus" class="status-text"></p></section>
+    </main>
+    <nav class="bottom-tabs" aria-label="主导航"><button class="active" type="button" data-target="discover">发现</button><button type="button" data-target="drops">发售</button><button type="button" data-target="community">社区</button><button type="button" data-target="creator">发布</button><button type="button" data-target="profile">我的</button></nav>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
