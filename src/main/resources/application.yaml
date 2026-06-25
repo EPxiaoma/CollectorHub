@@ -2,14 +2,14 @@ server:
   port: 8081
 spring:
   application:
-    name: hmdp
+    name: collectorhub
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://39.105.217.174:3306/hmdp?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://127.0.0.1:3306/collectorhub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: 123456
   redis:
-    host: 39.105.217.174
+    host: 127.0.0.1
     port: 6379
     password: 123456
     lettuce:
@@ -19,9 +19,16 @@ spring:
         min-idle: 1
         time-between-eviction-runs: 10s
   jackson:
-    default-property-inclusion: non_null # JSON处理时忽略非空字段
+    default-property-inclusion: non_null # JSON 响应忽略空字段
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  producer:
+    group: collectorhub-flash-sale-producer
+collectorhub:
+  mq:
+    flash-sale-topic: collectorhub-flash-sale-order
 mybatis-plus:
-  type-aliases-package: com.hmdp.entity # 别名扫描包
+  type-aliases-package: com.collectorhub.entity # 实体别名扫描包
 logging:
   level:
-    com.hmdp: debug
+    com.collectorhub: debug
