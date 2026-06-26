@@ -5,11 +5,11 @@ spring:
     name: collectorhub
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/collectorhub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://39.105.217.174:3306/collectorhub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: 123456
   redis:
-    host: 127.0.0.1
+    host: 39.105.217.174
     port: 6379
     password: 123456
     lettuce:
@@ -21,7 +21,7 @@ spring:
   jackson:
     default-property-inclusion: non_null # JSON 响应忽略空字段
 rocketmq:
-  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  name-server: ${ROCKETMQ_NAME_SERVER:39.105.217.174:9876}
   producer:
     group: collectorhub-flash-sale-producer
 collectorhub:

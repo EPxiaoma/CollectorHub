@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 开箱测评图片上传接口。
+ * Image upload APIs for reviews and user avatars.
  */
 @Slf4j
 @RestController
@@ -24,12 +24,25 @@ public class UploadController {
     public Result uploadImage(@RequestParam("file") MultipartFile image) {
         try {
             String originalFilename = image.getOriginalFilename();
-            String fileName = createNewFileName(originalFilename);
-            image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
-            log.debug("文件上传成功：{}", fileName);
+            String fileName = createNewFileName(originalFilename, "reviews", true);
+            image.transferTo(resolveImageFile(fileName));
+            log.debug("Review image uploaded: {}", fileName);
             return Result.ok(fileName);
         } catch (IOException e) {
-            throw new RuntimeException("文件上传失败", e);
+            throw new RuntimeException("Review image upload failed", e);
+        }
+    }
+
+    @PostMapping("/icons")
+    public Result uploadIcon(@RequestParam("file") MultipartFile image) {
+        try {
+            String originalFilename = image.getOriginalFilename();
+            String fileName = createNewFileName(originalFilename, "icons", false);
+            image.transferTo(resolveImageFile(fileName));
+            log.debug("Avatar uploaded: {}", fileName);
+            return Result.ok(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("Avatar upload failed", e);
         }
     }
 
@@ -37,22 +50,33 @@ public class UploadController {
     public Result deleteReviewImg(@RequestParam("name") String filename) {
         File file = new File(SystemConstants.IMAGE_UPLOAD_DIR, filename);
         if (file.isDirectory()) {
-            return Result.fail("错误的文件名称");
+            return Result.fail("Invalid file name");
         }
         FileUtil.del(file);
         return Result.ok();
     }
 
-    private String createNewFileName(String originalFilename) {
+    private File resolveImageFile(String fileName) {
+        return new File(SystemConstants.IMAGE_UPLOAD_DIR, StrUtil.removePrefix(fileName, "/"));
+    }
+
+    private String createNewFileName(String originalFilename, String folder, boolean useHashDir) {
         String suffix = StrUtil.subAfter(originalFilename, ".", true);
         String name = UUID.randomUUID().toString();
+        if (!useHashDir) {
+            File dir = new File(SystemConstants.IMAGE_UPLOAD_DIR, folder);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            return StrUtil.format("/{}/{}.{}", folder, name, suffix);
+        }
         int hash = name.hashCode();
         int d1 = hash & 0xF;
         int d2 = (hash >> 4) & 0xF;
-        File dir = new File(SystemConstants.IMAGE_UPLOAD_DIR, StrUtil.format("/reviews/{}/{}", d1, d2));
+        File dir = new File(SystemConstants.IMAGE_UPLOAD_DIR, StrUtil.format("{}/{}/{}", folder, d1, d2));
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        return StrUtil.format("/reviews/{}/{}/{}.{}", d1, d2, name, suffix);
+        return StrUtil.format("/{}/{}/{}/{}.{}", folder, d1, d2, name, suffix);
     }
 }

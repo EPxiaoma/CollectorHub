@@ -2,6 +2,7 @@ const API_BASE = '/api';
 const state = {
   token: localStorage.getItem('collectorhub_token') || '',
   user: null,
+  profile: null,
   types: [],
   collectibles: [],
   selectedCollectible: null,
@@ -29,6 +30,29 @@ const els = {
   releaseStatus: $('#releaseStatus'),
   authStatus: $('#authStatus'),
   reviewStatus: $('#reviewStatus'),
+  loginPanel: $('#loginPanel'),
+  profilePanel: $('#profilePanel'),
+  profileIcon: $('#profileIcon'),
+  profileName: $('#profileName'),
+  profileIntro: $('#profileIntro'),
+  profileFans: $('#profileFans'),
+  profileFollowee: $('#profileFollowee'),
+  profileCredits: $('#profileCredits'),
+  profileDetails: $('#profileDetails'),
+  editProfileBtn: $('#editProfileBtn'),
+  profileLogoutBtn: $('#profileLogoutBtn'),
+  profileEditForm: $('#profileEditForm'),
+  editNickName: $('#editNickName'),
+  editIcon: $('#editIcon'),
+  editIconFile: $('#editIconFile'),
+  editIconPreview: $('#editIconPreview'),
+  avatarUploadStatus: $('#avatarUploadStatus'),
+  editCity: $('#editCity'),
+  editIntroduce: $('#editIntroduce'),
+  editGender: $('#editGender'),
+  editBirthday: $('#editBirthday'),
+  cancelEditProfileBtn: $('#cancelEditProfileBtn'),
+  profileEditStatus: $('#profileEditStatus'),
   toast: $('#toast')
 };
 
@@ -40,6 +64,25 @@ const TXT = {
   backendFailed: '\u540e\u7aef\u8fd4\u56de\u5931\u8d25',
   player: '\u73a9\u5bb6',
   guest: '\u672a\u767b\u5f55',
+  profileFallbackIntro: '\u8fd9\u4f4d\u73a9\u5bb6\u8fd8\u6ca1\u6709\u7559\u4e0b\u4e2a\u4eba\u4ecb\u7ecd\u3002',
+  profileEmpty: '\u767b\u5f55\u540e\u53ef\u67e5\u770b\u4e2a\u4eba\u8d44\u6599\u3002',
+  phone: '\u624b\u673a\u53f7',
+  city: '\u57ce\u5e02',
+  gender: '\u6027\u522b',
+  birthday: '\u751f\u65e5',
+  level: '\u4f1a\u5458',
+  joinedAt: '\u52a0\u5165\u65f6\u95f4',
+  male: '\u7537',
+  female: '\u5973',
+  enabled: '\u5df2\u5f00\u901a',
+  disabled: '\u672a\u5f00\u901a',
+  editProfile: '\u7f16\u8f91\u8d44\u6599',
+  closeEdit: '\u6536\u8d77\u7f16\u8f91',
+  profileSaving: '\u6b63\u5728\u4fdd\u5b58\u8d44\u6599...',
+  profileSaved: '\u8d44\u6599\u5df2\u4fdd\u5b58',
+  avatarUploading: '\u6b63\u5728\u4e0a\u4f20\u5934\u50cf...',
+  avatarUploaded: '\u5934\u50cf\u5df2\u4e0a\u4f20',
+  chooseAvatar: '\u8bf7\u5148\u9009\u62e9\u5934\u50cf\u56fe\u7247',
   allToys: '\u5168\u90e8\u5355\u54c1',
   unnamedType: '\u672a\u547d\u540d\u54c1\u7c7b',
   unnamedToy: '\u672a\u547d\u540d\u5355\u54c1',
@@ -104,7 +147,9 @@ function imageUrl(path) {
 function showView(name, updateHash = true) {
   const next = document.querySelector('[data-view="' + name + '"]') ? name : 'discover';
   document.querySelectorAll('.view').forEach((view) => view.classList.toggle('active', view.dataset.view === next));
-  document.querySelectorAll('.bottom-tabs button').forEach((button) => button.classList.toggle('active', button.dataset.target === next));
+  const activeTab = next === 'profile-edit' ? 'profile' : next;
+  document.querySelectorAll('.bottom-tabs button').forEach((button) => button.classList.toggle('active', button.dataset.target === activeTab));
+  if (next === 'profile-edit') fillProfileEditForm();
   if (updateHash) history.replaceState(null, '', '#' + next);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -140,6 +185,54 @@ function renderUser() {
   if (state.user) { els.userBadge.textContent = state.user.nickName || state.user.name || TXT.player + ' ' + state.user.id; els.logoutBtn.hidden = false; return; }
   els.userBadge.textContent = TXT.guest;
   els.logoutBtn.hidden = true;
+}
+function displayValue(value) { return value === null || value === undefined || value === '' ? '--' : String(value); }
+function formatProfileGender(value) { if (value === true) return TXT.male; if (value === false) return TXT.female; return '--'; }
+function formatProfileLevel(value) { if (value === true) return TXT.enabled; if (value === false) return TXT.disabled; return '--'; }
+function renderProfileDetail(label, value) { return '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(displayValue(value)) + '</strong></div>'; }
+function renderProfile() {
+  const loggedIn = Boolean(state.token && state.user);
+  if (els.loginPanel) els.loginPanel.hidden = loggedIn;
+  if (els.profilePanel) els.profilePanel.hidden = !loggedIn;
+  if (!loggedIn) return;
+  const profile = state.profile || {};
+  const name = profile.nickName || state.user.nickName || TXT.player + ' ' + state.user.id;
+  els.profileName.textContent = name;
+  els.profileIntro.textContent = profile.introduce || TXT.profileFallbackIntro;
+  els.profileFans.textContent = displayValue(profile.fans);
+  els.profileFollowee.textContent = displayValue(profile.followee);
+  els.profileCredits.textContent = displayValue(profile.credits);
+  els.profileIcon.src = imageUrl(profile.icon || state.user.icon);
+  els.profileDetails.innerHTML = [
+    renderProfileDetail(TXT.phone, profile.phone),
+    renderProfileDetail(TXT.city, profile.city),
+    renderProfileDetail(TXT.gender, formatProfileGender(profile.gender)),
+    renderProfileDetail(TXT.birthday, profile.birthday),
+    renderProfileDetail(TXT.level, formatProfileLevel(profile.level)),
+    renderProfileDetail(TXT.joinedAt, profile.createTime ? String(profile.createTime).replace('T', ' ').slice(0, 16) : '')
+  ].join('');
+  if (els.editProfileBtn) els.editProfileBtn.textContent = TXT.editProfile;
+  wireImageFallbacks(els.profilePanel);
+}
+function fillProfileEditForm() {
+  const profile = state.profile || {};
+  els.editNickName.value = profile.nickName || state.user?.nickName || '';
+  els.editIcon.value = profile.icon || state.user?.icon || '';
+  els.editIconFile.value = '';
+  els.editIconPreview.src = imageUrl(els.editIcon.value);
+  els.avatarUploadStatus.textContent = '';
+  els.editCity.value = profile.city || '';
+  els.editIntroduce.value = profile.introduce || '';
+  els.editGender.value = profile.gender === true ? 'true' : (profile.gender === false ? 'false' : '');
+  els.editBirthday.value = profile.birthday || '';
+  els.profileEditStatus.textContent = '';
+}
+function openProfileEdit() {
+  fillProfileEditForm();
+  showView('profile-edit');
+}
+function closeProfileEdit() {
+  showView('profile');
 }
 function renderTypes() {
   if (!state.types.length) {
@@ -182,15 +275,63 @@ function renderReviews() {
   els.reviewFeed.innerHTML = state.reviews.map((review) => '<article class="review-card">' + artwork(review.images, review.title, 'review-image') + '<div><div class="review-meta"><strong>' + escapeHtml(cleanText(review.name, TXT.chPlayer)) + '</strong><span>' + escapeHtml(cleanText(review.createTime, '').slice(0, 10)) + '</span></div><h3>' + escapeHtml(cleanText(review.title, TXT.untitledReview)) + '</h3><p>' + escapeHtml(cleanText(review.content, TXT.noReviewContent)) + '</p><div class="review-actions"><button class="' + (review.isLike ? 'liked' : '') + '" type="button" data-like="' + review.id + '">' + TXT.like + ' ' + (review.liked ?? 0) + '</button><button type="button" data-likes="' + review.id + '">' + TXT.likedUsers + '</button><span>' + (review.comments ?? 0) + ' ' + TXT.comments + '</span></div></div></article>').join('');
   wireImageFallbacks(els.reviewFeed);
 }
-async function loadMe() { if (!state.token) { renderUser(); return; } try { state.user = await api('/user/me'); } catch (_error) { state.token = ''; state.user = null; localStorage.removeItem('collectorhub_token'); } renderUser(); }
+async function loadMe() { if (!state.token) { state.user = null; state.profile = null; renderUser(); renderProfile(); return; } try { state.user = await api('/user/me'); } catch (_error) { state.token = ''; state.user = null; state.profile = null; localStorage.removeItem('collectorhub_token'); } renderUser(); renderProfile(); }
+async function loadProfile() { if (!state.token || !state.user) { state.profile = null; renderProfile(); return; } try { state.profile = await api('/user/profile'); if (state.profile) { state.user = { ...(state.user || {}), id: state.profile.id, nickName: state.profile.nickName, icon: state.profile.icon }; renderUser(); } } catch (error) { state.profile = null; showToast(error.message); } renderProfile(); }
+async function uploadAvatar(file) {
+  if (!file) {
+    els.avatarUploadStatus.textContent = TXT.chooseAvatar;
+    return '';
+  }
+  const body = new FormData();
+  body.append('file', file);
+  els.avatarUploadStatus.textContent = TXT.avatarUploading;
+  const uploaded = await api('/upload/icons', { method: 'POST', body });
+  els.editIcon.value = uploaded ? '/imgs' + uploaded : '';
+  els.editIconPreview.src = imageUrl(els.editIcon.value);
+  els.avatarUploadStatus.textContent = TXT.avatarUploaded;
+  wireImageFallbacks(document.querySelector('#profile-edit'));
+  return els.editIcon.value;
+}
+async function handleAvatarChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    await uploadAvatar(file);
+  } catch (error) {
+    els.avatarUploadStatus.textContent = error.message;
+  }
+}
+async function saveProfile(event) {
+  event.preventDefault();
+  const genderValue = els.editGender.value;
+  const payload = {
+    nickName: els.editNickName.value.trim(),
+    icon: els.editIcon.value.trim(),
+    city: els.editCity.value.trim(),
+    introduce: els.editIntroduce.value.trim(),
+    gender: genderValue === '' ? null : genderValue === 'true',
+    birthday: els.editBirthday.value || null
+  };
+  try {
+    els.profileEditStatus.textContent = TXT.profileSaving;
+    state.profile = await api('/user/profile', { method: 'PUT', body: JSON.stringify(payload) });
+    if (state.profile) state.user = { ...(state.user || {}), id: state.profile.id, nickName: state.profile.nickName, icon: state.profile.icon };
+    renderUser();
+    renderProfile();
+    closeProfileEdit();
+    showToast(TXT.profileSaved);
+  } catch (error) {
+    els.profileEditStatus.textContent = error.message;
+  }
+}
 async function loadTypes() { try { state.types = await api('/collectible-types/list') || []; } catch (error) { state.types = []; showToast(error.message); } renderTypes(); }
 async function loadCollectibles(params = {}) { state.activeType = params.typeId || 'all'; setLoading(els.collectibleGrid, TXT.loadingToys); const path = params.typeId && params.typeId !== 'all' ? '/collectibles/of/type?typeId=' + encodeURIComponent(params.typeId) : '/collectibles/of/name?name=' + encodeURIComponent(params.name || ''); try { state.collectibles = await api(path) || []; state.selectedCollectible = state.collectibles[0] || null; renderTypes(); renderCollectibles(); renderSelected(); await loadReleases(); } catch (error) { state.collectibles = []; renderCollectibles(); showToast(error.message); } }
 async function selectCollectible(id) { try { state.selectedCollectible = await api('/collectibles/' + id); } catch (error) { state.selectedCollectible = state.collectibles.find((item) => String(item.id) === String(id)); showToast(error.message); } renderCollectibles(); renderSelected(); await loadReleases(); showView('drops'); }
 async function loadReleases() { if (!state.selectedCollectible) { renderReleases(); return; } setLoading(els.releaseList, TXT.loadingDrops); try { state.releases = await api('/release-items/list/' + state.selectedCollectible.id) || []; } catch (error) { state.releases = []; showToast(error.message); } renderReleases(); }
 async function loadReviews(myOnly = false) { setLoading(els.reviewFeed, TXT.loadingReviews); try { state.reviews = await api(myOnly ? '/reviews/of/me' : '/reviews/hot') || []; } catch (error) { state.reviews = []; showToast(error.message); } renderReviews(); }
 async function sendCode() { const phone = $('#phoneInput').value.trim(); if (!phone) { els.authStatus.textContent = TXT.phoneRequired; return; } try { await api('/user/code?phone=' + encodeURIComponent(phone), { method: 'POST' }); els.authStatus.textContent = TXT.codeSent; } catch (error) { els.authStatus.textContent = error.message; } }
-async function login(event) { event.preventDefault(); const phone = $('#phoneInput').value.trim(); const code = $('#codeInput').value.trim(); try { const token = await api('/user/login', { method: 'POST', body: JSON.stringify({ phone, code }) }); state.token = token; localStorage.setItem('collectorhub_token', token); els.authStatus.textContent = TXT.loginOk; await loadMe(); await loadReviews(); } catch (error) { els.authStatus.textContent = error.message; } }
-async function logout() { try { await api('/user/logout', { method: 'POST' }); } catch (_error) {} state.token = ''; state.user = null; localStorage.removeItem('collectorhub_token'); renderUser(); showToast(TXT.logoutOk); }
+async function login(event) { event.preventDefault(); const phone = $('#phoneInput').value.trim(); const code = $('#codeInput').value.trim(); try { const token = await api('/user/login', { method: 'POST', body: JSON.stringify({ phone, code }) }); state.token = token; localStorage.setItem('collectorhub_token', token); els.authStatus.textContent = TXT.loginOk; await loadMe(); await loadProfile(); await loadReviews(); showView('profile'); } catch (error) { els.authStatus.textContent = error.message; } }
+async function logout() { try { await api('/user/logout', { method: 'POST' }); } catch (_error) {} state.token = ''; state.user = null; state.profile = null; localStorage.removeItem('collectorhub_token'); renderUser(); renderProfile(); showToast(TXT.logoutOk); }
 async function rushBuy(id) { try { const orderId = await api('/flash-sale-orders/rush/' + id, { method: 'POST' }); showToast(TXT.orderSubmitted + orderId); } catch (error) { showToast(error.message); } }
 async function likeReview(id) { try { await api('/reviews/like/' + id, { method: 'PUT' }); await loadReviews(); } catch (error) { showToast(error.message); } }
 async function showReviewLikes(id) { try { const users = await api('/reviews/likes/' + id) || []; const names = users.map((user) => user.nickName || user.name || TXT.player + ' ' + user.id).join('\u3001'); showToast(names ? TXT.recentLikes + names : TXT.noLikes); } catch (error) { showToast(error.message); } }
@@ -201,6 +342,11 @@ function bindEvents() {
   $('#sendCodeBtn').addEventListener('click', sendCode);
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
+  $('#profileLogoutBtn').addEventListener('click', logout);
+  $('#editProfileBtn').addEventListener('click', openProfileEdit);
+  $('#cancelEditProfileBtn').addEventListener('click', closeProfileEdit);
+  $('#profileEditForm').addEventListener('submit', saveProfile);
+  $('#editIconFile').addEventListener('change', handleAvatarChange);
   $('#refreshBtn').addEventListener('click', () => loadCollectibles());
   $('#searchForm').addEventListener('submit', (event) => { event.preventDefault(); loadCollectibles({ name: $('#searchInput').value.trim() }); });
   $('#reviewForm').addEventListener('submit', publishReview);
@@ -210,5 +356,5 @@ function bindEvents() {
   els.releaseList.addEventListener('click', (event) => { const button = event.target.closest('[data-rush]'); if (button && !button.disabled) rushBuy(button.dataset.rush); });
   els.reviewFeed.addEventListener('click', (event) => { const like = event.target.closest('[data-like]'); const likes = event.target.closest('[data-likes]'); if (like) likeReview(like.dataset.like); if (likes) showReviewLikes(likes.dataset.likes); });
 }
-async function boot() { bindEvents(); renderUser(); window.addEventListener('hashchange', () => showView(location.hash.replace('#', '') || 'discover', false)); showView(location.hash.replace('#', '') || 'discover', false); await Promise.all([loadMe(), loadTypes(), loadReviews()]); await loadCollectibles(); }
+async function boot() { bindEvents(); renderUser(); renderProfile(); window.addEventListener('hashchange', () => showView(location.hash.replace('#', '') || 'discover', false)); showView(location.hash.replace('#', '') || 'discover', false); await loadMe(); await Promise.all([loadProfile(), loadTypes(), loadReviews()]); await loadCollectibles(); }
 boot();
