@@ -4,8 +4,10 @@ const assert = require('assert');
 
 const appPath = path.resolve(__dirname, '../../../frontend/nginx-1.18.0/html/collectorhub/app.js');
 const indexPath = path.resolve(__dirname, '../../../frontend/nginx-1.18.0/html/collectorhub/index.html');
+const stylesPath = path.resolve(__dirname, '../../../frontend/nginx-1.18.0/html/collectorhub/styles.css');
 const source = fs.readFileSync(appPath, 'utf8');
 const html = fs.readFileSync(indexPath, 'utf8');
+const styles = fs.readFileSync(stylesPath, 'utf8');
 
 const saveProfileMatch = source.match(/async function saveProfile\(event\) \{[\s\S]*?\n\}/);
 assert(saveProfileMatch, 'saveProfile function should exist');
@@ -28,4 +30,14 @@ assert(source.includes('profileLogoutBtn: $(\'#profileLogoutBtn\')'), 'profile l
 assert(
   source.includes("$('#profileLogoutBtn').addEventListener('click', logout);"),
   'profile logout button should use the same logout handler'
+);
+
+assert(
+  /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/i.test(styles),
+  'hidden panels should remain hidden even when component classes set display'
+);
+
+assert(
+  source.includes("showView('profile');"),
+  'login should navigate to the profile page after successful sign in'
 );
