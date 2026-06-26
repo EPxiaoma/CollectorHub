@@ -30,6 +30,7 @@ const els = {
   releaseStatus: $('#releaseStatus'),
   authStatus: $('#authStatus'),
   reviewStatus: $('#reviewStatus'),
+  reviewCollectibleSelect: $('#reviewCollectibleSelect'),
   loginPanel: $('#loginPanel'),
   profilePanel: $('#profilePanel'),
   profileIcon: $('#profileIcon'),
@@ -122,7 +123,8 @@ const TXT = {
   orderSubmitted: '\u62a2\u8d2d\u8bf7\u6c42\u5df2\u63d0\u4ea4\uff0c\u8ba2\u5355\u53f7\uff1a',
   recentLikes: '\u6700\u8fd1\u559c\u6b22\uff1a',
   noLikes: '\u8fd8\u6ca1\u6709\u73a9\u5bb6\u70b9\u8d5e',
-  reviewRequired: '\u8bf7\u586b\u5199\u5173\u8054\u5355\u54c1\u3001\u6807\u9898\u548c\u5185\u5bb9\u3002',
+  reviewRequired: '\u8bf7\u9009\u62e9\u5173\u8054\u5355\u54c1\uff0c\u5e76\u586b\u5199\u6807\u9898\u548c\u5185\u5bb9\u3002',
+  noSelectableCollectible: '\u6682\u65e0\u53ef\u9009\u62e9\u5355\u54c1',
   publishing: '\u6b63\u5728\u53d1\u5e03\u6d4b\u8bc4...',
   published: '\u6d4b\u8bc4\u5df2\u53d1\u5e03\uff0c\u7f16\u53f7',
   loadingDrops: '\u6b63\u5728\u52a0\u8f7d\u53d1\u552e\u65e5\u5386...',
@@ -254,11 +256,21 @@ function renderSelected() {
   els.selectedName.textContent = cleanText(item.name, TXT.unnamedToy);
   els.selectedMeta.textContent = cleanText(item.area, 'CollectorHub') + ' \u00b7 ' + cleanText(item.address, TXT.online) + ' \u00b7 ' + cleanText(item.openHours, TXT.allDay);
   els.selectedStats.innerHTML = '<span><strong>' + money(item.avgPrice) + '</strong><small>' + TXT.price + '</small></span><span><strong>' + (item.sold ?? 0) + '</strong><small>' + TXT.sold + '</small></span><span><strong>' + (item.score ?? 0) + '/50</strong><small>' + TXT.score + '</small></span>';
-  $('#reviewCollectibleId').value = item.id;
+  if (els.reviewCollectibleSelect) els.reviewCollectibleSelect.value = String(item.id);
   els.featuredTitle.textContent = cleanText(item.name, TXT.drop);
   els.featuredPrice.textContent = money(item.avgPrice);
   els.featuredScore.textContent = String(item.score ?? 0);
   wireImageFallbacks(document.querySelector('.product-detail'));
+}
+function formatCollectibleOption(item) { return cleanText(item.name, TXT.unnamedToy) + ' \u00b7 ' + cleanText(item.area, 'CollectorHub') + ' \u00b7 ' + money(item.avgPrice); }
+function renderCollectibleOptions() {
+  if (!els.reviewCollectibleSelect) return;
+  if (!state.collectibles.length) {
+    els.reviewCollectibleSelect.innerHTML = '<option value="">' + TXT.noSelectableCollectible + '</option>';
+    return;
+  }
+  els.reviewCollectibleSelect.innerHTML = state.collectibles.map((item) => '<option value="' + item.id + '">' + escapeHtml(formatCollectibleOption(item)) + '</option>').join('');
+  if (state.selectedCollectible) els.reviewCollectibleSelect.value = String(state.selectedCollectible.id);
 }
 function renderReleases() {
   if (!state.selectedCollectible) { els.releaseList.innerHTML = '<div class="empty-state">' + TXT.selectRelease + '</div>'; return; }
@@ -325,10 +337,11 @@ async function saveProfile(event) {
   }
 }
 async function loadTypes() { try { state.types = await api('/collectible-types/list') || []; } catch (error) { state.types = []; showToast(error.message); } renderTypes(); }
-async function loadCollectibles(params = {}) { state.activeType = params.typeId || 'all'; setLoading(els.collectibleGrid, TXT.loadingToys); const path = params.typeId && params.typeId !== 'all' ? '/collectibles/of/type?typeId=' + encodeURIComponent(params.typeId) : '/collectibles/of/name?name=' + encodeURIComponent(params.name || ''); try { state.collectibles = await api(path) || []; state.selectedCollectible = state.collectibles[0] || null; renderTypes(); renderCollectibles(); renderSelected(); await loadReleases(); } catch (error) { state.collectibles = []; renderCollectibles(); showToast(error.message); } }
+async function loadCollectibles(params = {}) { state.activeType = params.typeId || 'all'; setLoading(els.collectibleGrid, TXT.loadingToys); const path = params.typeId && params.typeId !== 'all' ? '/collectibles/of/type?typeId=' + encodeURIComponent(params.typeId) : '/collectibles/of/name?name=' + encodeURIComponent(params.name || ''); try { state.collectibles = await api(path) || []; state.selectedCollectible = state.collectibles[0] || null; renderTypes(); renderCollectibles(); renderCollectibleOptions(); renderSelected(); await loadReleases(); } catch (error) { state.collectibles = []; renderCollectibles(); renderCollectibleOptions(); showToast(error.message); } }
 async function selectCollectible(id) { try { state.selectedCollectible = await api('/collectibles/' + id); } catch (error) { state.selectedCollectible = state.collectibles.find((item) => String(item.id) === String(id)); showToast(error.message); } renderCollectibles(); renderSelected(); await loadReleases(); showView('drops'); }
 async function loadReleases() { if (!state.selectedCollectible) { renderReleases(); return; } setLoading(els.releaseList, TXT.loadingDrops); try { state.releases = await api('/release-items/list/' + state.selectedCollectible.id) || []; } catch (error) { state.releases = []; showToast(error.message); } renderReleases(); }
 async function loadReviews(myOnly = false) { setLoading(els.reviewFeed, TXT.loadingReviews); try { state.reviews = await api(myOnly ? '/reviews/of/me' : '/reviews/hot') || []; } catch (error) { state.reviews = []; showToast(error.message); } renderReviews(); }
+async function handleReviewCollectibleChange() { const item = state.collectibles.find((collectible) => String(collectible.id) === els.reviewCollectibleSelect.value); if (!item) return; state.selectedCollectible = item; renderCollectibles(); renderSelected(); await loadReleases(); }
 async function sendCode() { const phone = $('#phoneInput').value.trim(); if (!phone) { els.authStatus.textContent = TXT.phoneRequired; return; } try { await api('/user/code?phone=' + encodeURIComponent(phone), { method: 'POST' }); els.authStatus.textContent = TXT.codeSent; } catch (error) { els.authStatus.textContent = error.message; } }
 async function login(event) { event.preventDefault(); const phone = $('#phoneInput').value.trim(); const code = $('#codeInput').value.trim(); try { const token = await api('/user/login', { method: 'POST', body: JSON.stringify({ phone, code }) }); state.token = token; localStorage.setItem('collectorhub_token', token); els.authStatus.textContent = TXT.loginOk; await loadMe(); await loadProfile(); await loadReviews(); showView('profile'); } catch (error) { els.authStatus.textContent = error.message; } }
 async function logout() { try { await api('/user/logout', { method: 'POST' }); } catch (_error) {} state.token = ''; state.user = null; state.profile = null; localStorage.removeItem('collectorhub_token'); renderUser(); renderProfile(); showToast(TXT.logoutOk); }
@@ -336,9 +349,10 @@ async function rushBuy(id) { try { const orderId = await api('/flash-sale-orders
 async function likeReview(id) { try { await api('/reviews/like/' + id, { method: 'PUT' }); await loadReviews(); } catch (error) { showToast(error.message); } }
 async function showReviewLikes(id) { try { const users = await api('/reviews/likes/' + id) || []; const names = users.map((user) => user.nickName || user.name || TXT.player + ' ' + user.id).join('\u3001'); showToast(names ? TXT.recentLikes + names : TXT.noLikes); } catch (error) { showToast(error.message); } }
 async function uploadReviewImage(file) { if (!file) return ''; const body = new FormData(); body.append('file', file); return api('/upload/reviews', { method: 'POST', body }); }
-async function publishReview(event) { event.preventDefault(); const collectibleId = Number($('#reviewCollectibleId').value); const title = $('#reviewTitle').value.trim(); const content = $('#reviewContent').value.trim(); const file = $('#reviewImage').files[0]; if (!collectibleId || !title || !content) { els.reviewStatus.textContent = TXT.reviewRequired; return; } try { els.reviewStatus.textContent = TXT.publishing; const uploaded = await uploadReviewImage(file); const images = uploaded ? '/imgs' + uploaded : ''; const reviewId = await api('/reviews', { method: 'POST', body: JSON.stringify({ collectibleId, title, content, images }) }); els.reviewStatus.textContent = TXT.published + ' ' + reviewId; $('#reviewForm').reset(); if (state.selectedCollectible) $('#reviewCollectibleId').value = state.selectedCollectible.id; await loadReviews(); showView('community'); } catch (error) { els.reviewStatus.textContent = error.message; } }
+async function publishReview(event) { event.preventDefault(); const collectibleId = Number(els.reviewCollectibleSelect.value); const title = $('#reviewTitle').value.trim(); const content = $('#reviewContent').value.trim(); const file = $('#reviewImage').files[0]; if (!collectibleId || !title || !content) { els.reviewStatus.textContent = TXT.reviewRequired; return; } try { els.reviewStatus.textContent = TXT.publishing; const uploaded = await uploadReviewImage(file); const images = uploaded ? '/imgs' + uploaded : ''; const reviewId = await api('/reviews', { method: 'POST', body: JSON.stringify({ collectibleId, title, content, images }) }); els.reviewStatus.textContent = TXT.published + ' ' + reviewId; $('#reviewForm').reset(); if (state.selectedCollectible) els.reviewCollectibleSelect.value = String(state.selectedCollectible.id); await loadReviews(); showView('community'); } catch (error) { els.reviewStatus.textContent = error.message; } }
 function bindEvents() {
   document.querySelector('.bottom-tabs').addEventListener('click', (event) => { const button = event.target.closest('[data-target]'); if (button) showView(button.dataset.target); });
+  els.userBadge.addEventListener('click', () => showView('profile'));
   $('#sendCodeBtn').addEventListener('click', sendCode);
   $('#loginForm').addEventListener('submit', login);
   $('#logoutBtn').addEventListener('click', logout);
@@ -350,6 +364,7 @@ function bindEvents() {
   $('#refreshBtn').addEventListener('click', () => loadCollectibles());
   $('#searchForm').addEventListener('submit', (event) => { event.preventDefault(); loadCollectibles({ name: $('#searchInput').value.trim() }); });
   $('#reviewForm').addEventListener('submit', publishReview);
+  els.reviewCollectibleSelect.addEventListener('change', handleReviewCollectibleChange);
   $('#myReviewsBtn').addEventListener('click', () => loadReviews(true));
   els.typeList.addEventListener('click', (event) => { const button = event.target.closest('[data-type]'); if (button) loadCollectibles({ typeId: button.dataset.type }); });
   els.collectibleGrid.addEventListener('click', (event) => { const button = event.target.closest('[data-id]'); if (button) selectCollectible(button.dataset.id); });

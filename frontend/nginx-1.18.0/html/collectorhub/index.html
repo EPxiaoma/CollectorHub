@@ -15,7 +15,7 @@
         <span><strong>CollectorHub</strong><small>潮玩发售与玩家社区</small></span>
       </a>
       <div class="account">
-        <span id="userBadge" class="user-badge">未登录</span>
+        <button id="userBadge" class="user-badge" type="button">未登录</button>
         <button id="logoutBtn" class="text-btn" type="button" hidden>退出</button>
       </div>
     </header>
@@ -32,7 +32,7 @@
         <section class="section-block"><div class="section-head row"><div><p class="eyebrow">Calendar</p><h2 id="dropsTitle">发售日历与秒杀</h2></div><span id="releaseStatus" class="status-pill">待选择</span></div><div id="releaseList" class="release-list"></div></section>
       </section>
       <section class="view" id="community" data-view="community" aria-labelledby="communityTitle"><div class="section-head row sticky-section-head"><div><p class="eyebrow">Community</p><h1 id="communityTitle">玩家开箱测评</h1></div><button id="myReviewsBtn" class="ghost-btn" type="button">我的</button></div><div id="reviewFeed" class="review-feed"></div></section>
-      <section class="view" id="creator" data-view="creator" aria-labelledby="creatorTitle"><div class="section-head"><p class="eyebrow">Creator Studio</p><h1 id="creatorTitle">发布开箱测评</h1><p class="muted">选择单品后会自动带入 ID，补充标题、图片和正文即可发布。</p></div><form id="reviewForm" class="review-form"><label>关联单品 ID<input id="reviewCollectibleId" type="number" min="1" placeholder="选择单品后自动填入"></label><label>上传图片<input id="reviewImage" type="file" accept="image/*"></label><label>标题<input id="reviewTitle" type="text" maxlength="80" placeholder="例如：首发款实物质感记录"></label><label>内容<textarea id="reviewContent" rows="6" maxlength="800" placeholder="记录包装、涂装、关节、编号和收藏建议"></textarea></label><button type="submit" class="full-btn">发布测评</button></form><p id="reviewStatus" class="status-text"></p></section>
+      <section class="view" id="creator" data-view="creator" aria-labelledby="creatorTitle"><div class="section-head"><p class="eyebrow">Creator Studio</p><h1 id="creatorTitle">发布开箱测评</h1><p class="muted">选择要测评的单品，补充图片、标题和正文即可发布。</p></div><form id="reviewForm" class="review-form"><label>关联单品<select id="reviewCollectibleSelect" required><option value="">正在加载单品...</option></select></label><label>上传图片<input id="reviewImage" type="file" accept="image/*"></label><label>标题<input id="reviewTitle" type="text" maxlength="80" placeholder="例如：首发款实物质感记录"></label><label>内容<textarea id="reviewContent" rows="6" maxlength="800" placeholder="记录包装、涂装、关节、编号和收藏建议"></textarea></label><button type="submit" class="full-btn">发布测评</button></form><p id="reviewStatus" class="status-text"></p></section>
       <section class="view" id="profile" data-view="profile" aria-labelledby="profileTitle">
         <div id="profilePanel" class="profile-panel" hidden>
           <div class="profile-actions"><button id="editProfileBtn" class="ghost-btn" type="button">编辑资料</button><button id="profileLogoutBtn" class="text-btn danger-btn" type="button">退出登录</button></div>

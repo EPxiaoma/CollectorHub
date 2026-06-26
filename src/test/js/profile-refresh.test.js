@@ -31,6 +31,14 @@ assert(
   source.includes("$('#profileLogoutBtn').addEventListener('click', logout);"),
   'profile logout button should use the same logout handler'
 );
+assert(
+  html.includes('<button id="userBadge"'),
+  'header user badge should be a clickable profile entry'
+);
+assert(
+  source.includes("els.userBadge.addEventListener('click', () => showView('profile'));"),
+  'header user badge should navigate to the profile/login page'
+);
 
 assert(
   /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/i.test(styles),
@@ -40,4 +48,29 @@ assert(
 assert(
   source.includes("showView('profile');"),
   'login should navigate to the profile page after successful sign in'
+);
+
+assert(
+  html.includes('id="reviewCollectibleSelect"'),
+  'creator form should offer a collectible selector instead of asking for an ID'
+);
+assert(
+  !html.includes('id="reviewCollectibleId"'),
+  'creator form should not expose the collectible ID field to users'
+);
+assert(
+  source.includes("reviewCollectibleSelect: $('#reviewCollectibleSelect')"),
+  'collectible selector should be captured in elements'
+);
+assert(
+  source.includes('function renderCollectibleOptions()'),
+  'collectible options should be rendered from loaded collectible data'
+);
+assert(
+  source.includes("els.reviewCollectibleSelect.addEventListener('change', handleReviewCollectibleChange);"),
+  'changing the selector should update the selected collectible'
+);
+assert(
+  source.includes('const collectibleId = Number(els.reviewCollectibleSelect.value);'),
+  'publishing should submit the selected collectible value internally'
 );

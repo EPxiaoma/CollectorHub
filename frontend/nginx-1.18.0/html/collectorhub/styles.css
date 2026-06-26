@@ -32,6 +32,8 @@ h3 { margin-bottom: 6px; font-size: 16px; line-height: 1.35; }
 .brand small { overflow: hidden; max-width: 140px; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .account { gap: 8px; }
 .user-badge, .status-pill { border-radius: 999px; padding: 7px 10px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.user-badge { border: 0; }
+.user-badge:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.24); }
 .text-btn, .ghost-btn { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #344054; font-weight: 800; }
 .text-btn { padding: 0 10px; }
 .ghost-btn { padding: 0 12px; }
